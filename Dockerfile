@@ -20,9 +20,6 @@ RUN apt-get update && apt-get install -y maven \
 # Create uploads directory
 RUN mkdir -p /app/uploads
 
-# Declare volume for persistent file storage
-VOLUME /app/uploads
-
 # Expose port 8080
 EXPOSE 8080
 
