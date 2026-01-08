@@ -11,7 +11,7 @@ COPY src ./src
 # Build the project with production profile
 RUN apt-get update && apt-get install -y maven \
     && mvn -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install -Pproduction \
-    && mv target/spring-boot-jwt-app-1.0.0.jar app.jar \
+    && mv target/adphoria-app-1.0.0.jar app.jar \
     && apt-get remove -y maven \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/* \
