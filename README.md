@@ -1,31 +1,102 @@
-# Spring Boot Application API Documentation
+# Adphoria Backend API
 
-A Spring Boot REST API application with JWT authentication for managing FAQs, Blogs, Researches, and Consultations.
+A Spring Boot REST API application with JWT authentication and bilingual (English/Arabic) support for managing FAQs, Blogs, Research, Previous Work, and Consultations.
+
+## ✨ Features
+
+- 🔐 **JWT Authentication** - Secure authentication with JSON Web Tokens
+- 🌍 **Bilingual Support** - Full English and Arabic content support
+- 📁 **File Upload** - Cloud-based file storage via Cloudinary (supports all file types)
+- 🐳 **Docker Ready** - Containerized deployment support
+- 🔒 **Role-Based Access** - Public and protected endpoints
+- 📊 **RESTful APIs** - Clean and well-structured API design
+
+## 🛠️ Technology Stack
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Java | 23 | Programming Language |
+| Spring Boot | 3.4.1 | Application Framework |
+| Spring Security | 3.4.1 | Authentication & Authorization |
+| Spring Data JPA | 3.4.1 | Database ORM |
+| MySQL | Latest | Database |
+| JWT (JJWT) | 0.12.3 | Token Generation |
+| Lombok | 1.18.30 | Reduce Boilerplate Code |
+| Cloudinary | 1.36.0 | Cloud File Storage |
+| Maven | Latest | Build Tool |
+| Docker | Latest | Containerization |
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Java 17+
-- Maven
-- MySQL (or H2 for development)
 
-### Running the Application
+- **Java 23** or higher
+- **Maven 3.6+**
+- **MySQL 8.0+**
+- **Docker** (optional, for containerized deployment)
+
+### Environment Configuration
+
+The application supports multiple profiles:
+- `dev` - Development environment
+- `prod` - Production environment
+
+Configure your database and Cloudinary credentials in `src/main/resources/application-{profile}.properties`
+
+### Running Locally
+
 ```bash
+# Development mode
 mvn spring-boot:run
+
+# With specific profile
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 The application will start at `http://localhost:8080`
+
+### Docker Deployment
+
+```bash
+# Build the Docker image
+docker build -t adphoria-backend .
+
+# Run the container
+docker run -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e DB_URL=your_database_url \
+  -e DB_USERNAME=your_username \
+  -e DB_PASSWORD=your_password \
+  adphoria-backend
+```
+
+> **Note**: The `VOLUME` keyword has been removed from the Dockerfile for Railway compatibility. Configure persistent storage through Railway volumes mounted at `/app/uploads`.
+
+---
+
+## 🌍 Bilingual Support
+
+All content entities (FAQ, Blog, Research, PreviousWork) support both **English** and **Arabic** languages. Each entity has separate fields for English and Arabic content:
+
+- **FAQ**: `englishQuestion`, `englishAnswer`, `arabicQuestion`, `arabicAnswer`
+- **Blog**: `blogEnglishTitle`, `blogEnglishBody`, `blogArabicTitle`, `blogArabicBody`, plus short descriptions
+- **Research**: `researchEnglishTitle`, `researchEnglishBody`, `researchArabicTitle`, `researchArabicBody`, plus short descriptions
+- **PreviousWork**: English and Arabic fields for name, summary, case name, and case category
+
+When creating or updating these entities, you must provide both English and Arabic content.
 
 ---
 
 ## 🔐 Authentication
 
 ### Register a New Admin
-```
+
+```http
 POST /auth/register
+Content-Type: application/json
 ```
 
-**Request Body (JSON):**
+**Request Body:**
 ```json
 {
   "username": "admin",
@@ -42,11 +113,13 @@ POST /auth/register
 ```
 
 ### Login
-```
+
+```http
 POST /auth/login
+Content-Type: application/json
 ```
 
-**Request Body (JSON):**
+**Request Body:**
 ```json
 {
   "username": "admin",
@@ -62,35 +135,39 @@ POST /auth/login
 ```
 
 ### Using the JWT Token
-For protected endpoints, add the token to the Authorization header:
+
+For protected endpoints, include the token in the Authorization header:
+
 ```
 Authorization: Bearer <your_jwt_token>
 ```
 
 ---
 
-## 📚 API Endpoints
+## 📚 API Endpoints Overview
 
-### Access Levels Summary
+### Access Control Summary
 
-| Endpoint | Method | Access |
-|----------|--------|--------|
-| `/auth/**` | POST | 🌐 Public |
-| `/api/faqs/**` | GET | 🌐 Public |
-| `/api/faqs/**` | POST, PUT, DELETE | 🔒 Authenticated |
-| `/api/blogs/**` | GET | 🌐 Public |
-| `/api/blogs/**` | POST, PUT, DELETE | 🔒 Authenticated |
-| `/api/researches/**` | GET | 🌐 Public |
-| `/api/researches/**` | POST, PUT, DELETE | 🔒 Authenticated |
-| `/api/consultations` | POST | 🌐 Public |
-| `/api/consultations/**` | GET, PUT, DELETE | 🔒 Authenticated |
+| Endpoint Pattern | GET | POST | PUT | DELETE |
+|-----------------|-----|------|-----|--------|
+| `/auth/**` | - | 🌐 Public | - | - |
+| `/api/faqs` | 🌐 Public | 🔒 Auth | 🔒 Auth | 🔒 Auth |
+| `/api/blogs` | 🌐 Public | 🔒 Auth | 🔒 Auth | 🔒 Auth |
+| `/api/researches` | 🌐 Public | 🔒 Auth | 🔒 Auth | 🔒 Auth |
+| `/api/previous-works` | 🌐 Public | 🔒 Auth | 🔒 Auth | 🔒 Auth |
+| `/api/consultations` | 🔒 Auth | 🌐 Public | 🔒 Auth | 🔒 Auth |
+| `/uploads/**` | 🌐 Public | - | - | - |
+
+🌐 **Public** - No authentication required  
+🔒 **Auth** - Requires JWT token
 
 ---
 
-## 📋 FAQ APIs
+## ❓ FAQ APIs
 
 ### Get All FAQs 🌐
-```
+
+```http
 GET /api/faqs
 ```
 
@@ -99,62 +176,70 @@ GET /api/faqs
 [
   {
     "questionId": 1,
-    "question": "What is your service?",
-    "answer": "We provide consultation services."
+    "englishQuestion": "What services do you offer?",
+    "englishAnswer": "We provide comprehensive legal consultation services.",
+    "arabicQuestion": "ما هي الخدمات التي تقدمونها؟",
+    "arabicAnswer": "نقدم خدمات استشارات قانونية شاملة."
   }
 ]
 ```
 
 ### Get FAQ by ID 🌐
-```
+
+```http
 GET /api/faqs/{id}
 ```
 
-### Search FAQs by Question 🌐
-```
-GET /api/faqs/search?question=service
-```
-
 ### Create FAQ 🔒
-```
-POST /api/faqs
-```
-**Headers:** `Authorization: Bearer <token>`
 
-**Request Body (JSON):**
+```http
+POST /api/faqs
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
 ```json
 {
-  "question": "What is your service?",
-  "answer": "We provide consultation services."
+  "englishQuestion": "What services do you offer?",
+  "englishAnswer": "We provide comprehensive legal consultation services.",
+  "arabicQuestion": "ما هي الخدمات التي تقدمونها؟",
+  "arabicAnswer": "نقدم خدمات استشارات قانونية شاملة."
 }
 ```
 
 ### Update FAQ 🔒
-```
-PUT /api/faqs/{id}
-```
-**Headers:** `Authorization: Bearer <token>`
 
-**Request Body (JSON):**
+```http
+PUT /api/faqs/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
 ```json
 {
-  "question": "Updated question?",
-  "answer": "Updated answer."
+  "englishQuestion": "Updated question?",
+  "englishAnswer": "Updated answer.",
+  "arabicQuestion": "سؤال محدث؟",
+  "arabicAnswer": "إجابة محدثة."
 }
 ```
 
 ### Delete FAQ 🔒
-```
+
+```http
 DELETE /api/faqs/{id}
+Authorization: Bearer <token>
 ```
-**Headers:** `Authorization: Bearer <token>`
 
 ---
 
 ## 📝 Blog APIs
 
 ### Get All Blogs 🌐
-```
+
+```http
 GET /api/blogs
 ```
 
@@ -163,78 +248,87 @@ GET /api/blogs
 [
   {
     "blogId": 1,
-    "blogPhoto": "http://localhost:8080/uploads/photo.jpg",
-    "blogTitle": "First Blog Post",
-    "blogBody": "This is the blog content..."
+    "blogPhoto": "https://res.cloudinary.com/.../photo.jpg",
+    "blogEnglishTitle": "Understanding Legal Rights",
+    "blogEnglishBody": "Full blog content in English...",
+    "englishShortDescription": "Brief summary in English",
+    "blogArabicTitle": "فهم الحقوق القانونية",
+    "blogArabicBody": "محتوى المدونة الكامل بالعربية...",
+    "arabicShortDescription": "ملخص موجز بالعربية"
   }
 ]
 ```
 
 ### Get Blog by ID 🌐
-```
+
+```http
 GET /api/blogs/{id}
 ```
 
-### Search Blogs by Title 🌐
-```
-GET /api/blogs/search?title=first
-```
+### Create Blog (with Photo) 🔒
 
-### Create Blog (with Photo Upload) 🔒
-```
+```http
 POST /api/blogs
+Authorization: Bearer <token>
 Content-Type: multipart/form-data
 ```
-**Headers:** `Authorization: Bearer <token>`
 
 **Form Data:**
-| Field | Type | Required |
-|-------|------|----------|
-| blogTitle | text | Yes |
-| blogBody | text | Yes |
-| blogPhoto | file | No |
 
-### Update Blog (with Photo Upload) 🔒
-```
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| blogEnglishTitle | text | Yes | Blog title in English |
+| blogEnglishBody | text | Yes | Blog content in English |
+| englishShortDescription | text | No | Short summary in English |
+| blogArabicTitle | text | Yes | Blog title in Arabic |
+| blogArabicBody | text | Yes | Blog content in Arabic |
+| arabicShortDescription | text | No | Short summary in Arabic |
+| blogPhoto | file | No | Image file (uploaded to Cloudinary) |
+
+### Update Blog 🔒
+
+```http
 PUT /api/blogs/{id}
+Authorization: Bearer <token>
 Content-Type: multipart/form-data
 ```
-**Headers:** `Authorization: Bearer <token>`
 
-**Form Data:**
-| Field | Type | Required |
-|-------|------|----------|
-| blogTitle | text | Yes |
-| blogBody | text | Yes |
-| blogPhoto | file | No |
+**Form Data:** Same as Create Blog
 
-### Update Blog (JSON only) 🔒
-```
+**Alternatively (JSON only - no photo update):**
+
+```http
 PUT /api/blogs/{id}
+Authorization: Bearer <token>
 Content-Type: application/json
 ```
-**Headers:** `Authorization: Bearer <token>`
 
-**Request Body (JSON):**
+**Request Body:**
 ```json
 {
-  "blogTitle": "Updated Title",
-  "blogBody": "Updated content..."
+  "blogEnglishTitle": "Updated English Title",
+  "blogEnglishBody": "Updated English content...",
+  "englishShortDescription": "Updated English summary",
+  "blogArabicTitle": "العنوان المحدث بالعربية",
+  "blogArabicBody": "المحتوى المحدث بالعربية...",
+  "arabicShortDescription": "الملخص المحدث بالعربية"
 }
 ```
 
 ### Delete Blog 🔒
-```
+
+```http
 DELETE /api/blogs/{id}
+Authorization: Bearer <token>
 ```
-**Headers:** `Authorization: Bearer <token>`
 
 ---
 
 ## 🔬 Research APIs
 
-### Get All Researches 🌐
-```
+### Get All Research 🌐
+
+```http
 GET /api/researches
 ```
 
@@ -243,81 +337,185 @@ GET /api/researches
 [
   {
     "researchId": 1,
-    "researchPhoto": "http://localhost:8080/uploads/photo.jpg",
-    "researchTitle": "First Research Paper",
-    "researchBody": "This is the research content..."
+    "researchPhoto": "https://res.cloudinary.com/.../research.jpg",
+    "researchEnglishTitle": "Legal Framework Study",
+    "researchEnglishBody": "Full research content in English...",
+    "englishShortDescription": "Brief summary in English",
+    "researchArabicTitle": "دراسة الإطار القانوني",
+    "researchArabicBody": "محتوى البحث الكامل بالعربية...",
+    "arabicShortDescription": "ملخص موجز بالعربية"
   }
 ]
 ```
 
 ### Get Research by ID 🌐
-```
+
+```http
 GET /api/researches/{id}
 ```
 
-### Search Researches by Title 🌐
-```
-GET /api/researches/search?title=first
-```
+### Create Research (with Photo) 🔒
 
-### Create Research (with Photo Upload) 🔒
-```
+```http
 POST /api/researches
+Authorization: Bearer <token>
 Content-Type: multipart/form-data
 ```
-**Headers:** `Authorization: Bearer <token>`
 
 **Form Data:**
-| Field | Type | Required |
-|-------|------|----------|
-| researchTitle | text | Yes |
-| researchBody | text | Yes |
-| researchPhoto | file | No |
 
-### Update Research (with Photo Upload) 🔒
-```
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| researchEnglishTitle | text | Yes | Research title in English |
+| researchEnglishBody | text | Yes | Research content in English |
+| englishShortDescription | text | No | Short summary in English |
+| researchArabicTitle | text | Yes | Research title in Arabic |
+| researchArabicBody | text | Yes | Research content in Arabic |
+| arabicShortDescription | text | No | Short summary in Arabic |
+| researchPhoto | file | No | Image file (uploaded to Cloudinary) |
+
+### Update Research 🔒
+
+```http
 PUT /api/researches/{id}
+Authorization: Bearer <token>
 Content-Type: multipart/form-data
 ```
-**Headers:** `Authorization: Bearer <token>`
 
-**Form Data:**
-| Field | Type | Required |
-|-------|------|----------|
-| researchTitle | text | Yes |
-| researchBody | text | Yes |
-| researchPhoto | file | No |
+**Form Data:** Same as Create Research
 
-### Update Research (JSON only) 🔒
-```
+**Alternatively (JSON only - no photo update):**
+
+```http
 PUT /api/researches/{id}
+Authorization: Bearer <token>
 Content-Type: application/json
 ```
-**Headers:** `Authorization: Bearer <token>`
 
-**Request Body (JSON):**
+**Request Body:**
 ```json
 {
-  "researchTitle": "Updated Title",
-  "researchBody": "Updated content..."
+  "researchEnglishTitle": "Updated English Title",
+  "researchEnglishBody": "Updated English content...",
+  "englishShortDescription": "Updated English summary",
+  "researchArabicTitle": "العنوان المحدث بالعربية",
+  "researchArabicBody": "المحتوى المحدث بالعربية...",
+  "arabicShortDescription": "الملخص المحدث بالعربية"
 }
 ```
 
 ### Delete Research 🔒
-```
+
+```http
 DELETE /api/researches/{id}
+Authorization: Bearer <token>
 ```
-**Headers:** `Authorization: Bearer <token>`
+
+---
+
+## 💼 Previous Work APIs
+
+### Get All Previous Works 🌐
+
+```http
+GET /api/previous-works
+```
+
+**Response:**
+```json
+[
+  {
+    "previousWorkId": 1,
+    "englishPreviousWorkName": "Contract Dispute Resolution",
+    "englishSummary": "Successfully resolved a complex contract dispute...",
+    "englishCaseName": "Smith vs. Johnson Corp",
+    "englishCaseCategory": "Commercial Law",
+    "arabicPreviousWorkName": "حل نزاع عقد",
+    "arabicSummary": "تم حل نزاع عقد معقد بنجاح...",
+    "arabicCaseName": "سميث ضد شركة جونسون",
+    "arabicCaseCategory": "القانون التجاري",
+    "caseFile": "https://res.cloudinary.com/.../case-document.pdf"
+  }
+]
+```
+
+### Get Previous Work by ID 🌐
+
+```http
+GET /api/previous-works/{id}
+```
+
+### Create Previous Work (with File) 🔒
+
+```http
+POST /api/previous-works
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**Form Data:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| englishPreviousWorkName | text | Yes | Work name in English |
+| englishSummary | text | No | Summary in English |
+| englishCaseName | text | No | Case name in English |
+| englishCaseCategory | text | No | Case category in English |
+| arabicPreviousWorkName | text | Yes | Work name in Arabic |
+| arabicSummary | text | No | Summary in Arabic |
+| arabicCaseName | text | No | Case name in Arabic |
+| arabicCaseCategory | text | No | Case category in Arabic |
+| caseFile | file | No | Any file type (uploaded to Cloudinary) |
+
+### Update Previous Work 🔒
+
+```http
+PUT /api/previous-works/{id}
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**Form Data:** Same as Create Previous Work
+
+**Alternatively (JSON only - no file update):**
+
+```http
+PUT /api/previous-works/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "englishPreviousWorkName": "Updated Work Name",
+  "englishSummary": "Updated summary...",
+  "englishCaseName": "Updated Case Name",
+  "englishCaseCategory": "Updated Category",
+  "arabicPreviousWorkName": "اسم العمل المحدث",
+  "arabicSummary": "الملخص المحدث...",
+  "arabicCaseName": "اسم القضية المحدثة",
+  "arabicCaseCategory": "الفئة المحدثة"
+}
+```
+
+### Delete Previous Work 🔒
+
+```http
+DELETE /api/previous-works/{id}
+Authorization: Bearer <token>
+```
 
 ---
 
 ## 💬 Consultation APIs
 
 ### Get All Consultations 🔒
-```
+
+```http
 GET /api/consultations
+Authorization: Bearer <token>
 ```
-**Headers:** `Authorization: Bearer <token>`
 
 **Response:**
 ```json
@@ -331,30 +529,28 @@ GET /api/consultations
     "causeName": "Contract Review",
     "mobileNumber": "+1234567890",
     "email": "john@example.com",
-    "consultationBody": "I need help with my contract..."
+    "consultationBody": "I need help reviewing my employment contract..."
   }
 ]
 ```
 
 ### Get Consultation by ID 🔒
-```
-GET /api/consultations/{id}
-```
-**Headers:** `Authorization: Bearer <token>`
 
-### Search Consultations by First Name 🔒
+```http
+GET /api/consultations/{id}
+Authorization: Bearer <token>
 ```
-GET /api/consultations/search?firstName=John
-```
-**Headers:** `Authorization: Bearer <token>`
 
 ### Create Consultation 🌐
-```
-POST /api/consultations
-```
-> **Note:** This endpoint is PUBLIC - anyone can submit a consultation request.
 
-**Request Body (JSON):**
+```http
+POST /api/consultations
+Content-Type: application/json
+```
+
+> **Note:** This endpoint is **PUBLIC** - anyone can submit a consultation request without authentication.
+
+**Request Body:**
 ```json
 {
   "firstName": "John",
@@ -363,17 +559,19 @@ POST /api/consultations
   "causeName": "Contract Review",
   "mobileNumber": "+1234567890",
   "email": "john@example.com",
-  "consultationBody": "I need help with my contract..."
+  "consultationBody": "I need help reviewing my employment contract..."
 }
 ```
 
 ### Update Consultation 🔒
-```
-PUT /api/consultations/{id}
-```
-**Headers:** `Authorization: Bearer <token>`
 
-**Request Body (JSON):**
+```http
+PUT /api/consultations/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
 ```json
 {
   "consultationStatus": "APPROVED",
@@ -382,61 +580,79 @@ PUT /api/consultations/{id}
   "causeCategory": "Legal",
   "causeName": "Contract Review",
   "mobileNumber": "+1234567890",
-  "email": "john@example.com"
+  "email": "john@example.com",
+  "consultationBody": "Updated consultation details..."
 }
 ```
 
 ### Delete Consultation 🔒
-```
+
+```http
 DELETE /api/consultations/{id}
+Authorization: Bearer <token>
 ```
-**Headers:** `Authorization: Bearer <token>`
 
 ---
 
-## 🧪 Testing with Postman
+## 📁 File Upload & Storage
 
-### Step 1: Import the Collection
-Create a new collection in Postman and add the endpoints described above.
+### File Storage System
 
-### Step 2: Test Public Endpoints (No Auth Required)
-1. **GET** `http://localhost:8080/api/faqs` - Get all FAQs
-2. **GET** `http://localhost:8080/api/blogs` - Get all blogs
-3. **GET** `http://localhost:8080/api/researches` - Get all researches
-4. **POST** `http://localhost:8080/api/consultations` - Submit a consultation
+The application uses **Cloudinary** for cloud-based file storage, supporting:
+- ✅ Images (JPEG, PNG, GIF, WebP, etc.)
+- ✅ Documents (PDF, DOC, DOCX, etc.)
+- ✅ Any file type
 
-### Step 3: Get Authentication Token
-1. **POST** `http://localhost:8080/auth/register` - Register (first time)
-2. **POST** `http://localhost:8080/auth/login` - Login and get token
+### Accessing Uploaded Files 🌐
 
-### Step 4: Configure Authorization in Postman
-1. In your Postman collection, go to **Authorization** tab
-2. Select **Type**: `Bearer Token`
-3. Paste your JWT token in the **Token** field
+All uploaded files are accessible via their Cloudinary URLs returned in the API responses. For example:
 
-### Step 5: Test Protected Endpoints
-Now you can test all protected endpoints:
-- Create/Update/Delete FAQs
-- Create/Update/Delete Blogs
-- Create/Update/Delete Researches
-- View/Update/Delete Consultations
+```
+https://res.cloudinary.com/your-cloud-name/image/upload/v1234567890/filename.jpg
+```
+
+No authentication is required to access uploaded files.
+
+### File Upload Limits
+
+Configure file size limits in `application.properties`:
+```properties
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+```
 
 ---
 
-## 📁 File Uploads
+## 🧪 Testing Guide
 
-Uploaded files are stored in the `uploads/` directory and accessible via:
-```
-GET /uploads/{filename}
-```
-This endpoint is public.
+### Testing with Postman
 
----
+#### 1. Import Collection
+Create a new Postman collection and add the endpoints from this documentation.
 
-## 🛠️ Testing with cURL
+#### 2. Test Public Endpoints (No Auth)
+- `GET /api/faqs` - List all FAQs
+- `GET /api/blogs` - List all blogs
+- `GET /api/researches` - List all research  
+- `GET /api/previous-works` - List all previous work
+- `POST /api/consultations` - Submit a consultation
 
-### Public Endpoints
+#### 3. Authenticate
+1. `POST /auth/register` - Register a new admin (first time only)
+2. `POST /auth/login` - Login and copy the JWT token
 
+#### 4. Configure Authorization
+- In Postman collection settings:
+  - Go to **Authorization** tab
+  - Select **Bearer Token**
+  - Paste your JWT token
+
+#### 5. Test Protected Endpoints
+Now test all CREATE, UPDATE, and DELETE operations for FAQs, Blogs, Research, and Previous Work.
+
+### Testing with cURL
+
+#### Public Endpoints
 ```bash
 # Get all FAQs
 curl http://localhost:8080/api/faqs
@@ -444,68 +660,84 @@ curl http://localhost:8080/api/faqs
 # Get all blogs
 curl http://localhost:8080/api/blogs
 
-# Get all researches
-curl http://localhost:8080/api/researches
-
 # Submit a consultation
 curl -X POST http://localhost:8080/api/consultations \
   -H "Content-Type: application/json" \
-  -d '{"firstName":"John","lastName":"Doe","email":"john@example.com","mobileNumber":"+1234567890","causeCategory":"Legal","causeName":"Contract Review"}'
+  -d '{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "mobileNumber": "+1234567890",
+    "causeCategory": "Legal",
+    "causeName": "Contract Review",
+    "consultationBody": "Need help with contract"
+  }'
 ```
 
-### Authentication
-
+#### Authentication
 ```bash
 # Register
 curl -X POST http://localhost:8080/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"password123","email":"admin@example.com"}'
+  -d '{
+    "username": "admin",
+    "password": "password123",
+    "email": "admin@example.com"
+  }'
 
 # Login
 curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"password123"}'
+  -d '{
+    "username": "admin",
+    "password": "password123"
+  }'
 ```
 
-### Protected Endpoints
-
+#### Protected Endpoints
 ```bash
-# Create FAQ (replace YOUR_TOKEN with actual token)
+# Create FAQ (replace TOKEN with your JWT)
 curl -X POST http://localhost:8080/api/faqs \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Authorization: Bearer TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"question":"What is this?","answer":"This is a test."}'
+  -d '{
+    "englishQuestion": "What is this?",
+    "englishAnswer": "This is a test.",
+    "arabicQuestion": "ما هذا؟",
+    "arabicAnswer": "هذا اختبار."
+  }'
 
 # Create Blog with photo
 curl -X POST http://localhost:8080/api/blogs \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "blogTitle=My Blog" \
-  -F "blogBody=Blog content here" \
+  -H "Authorization: Bearer TOKEN" \
+  -F "blogEnglishTitle=My Blog" \
+  -F "blogEnglishBody=English content" \
+  -F "blogArabicTitle=مدونتي" \
+  -F "blogArabicBody=المحتوى العربي" \
   -F "blogPhoto=@/path/to/photo.jpg"
-
-# Create Research with photo
-curl -X POST http://localhost:8080/api/researches \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "researchTitle=My Research" \
-  -F "researchBody=Research content here" \
-  -F "researchPhoto=@/path/to/photo.jpg"
-
-# Get all consultations
-curl http://localhost:8080/api/consultations \
-  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ---
 
-## 📊 Response Codes
+## 📊 HTTP Response Codes
 
 | Code | Description |
 |------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 204 | No Content (successful delete) |
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 403 | Forbidden |
-| 404 | Not Found |
-| 500 | Internal Server Error |
+| 200 | OK - Request successful |
+| 201 | Created - Resource created successfully |
+| 204 | No Content - Successful delete |
+| 400 | Bad Request - Invalid input |
+| 401 | Unauthorized - Missing or invalid JWT token |
+| 403 | Forbidden - Insufficient permissions |
+| 404 | Not Found - Resource doesn't exist |
+| 500 | Internal Server Error - Server error |
+
+---
+
+## 📝 License
+
+This project is proprietary software developed for Adphoria.
+
+## 🤝 Support
+
+For questions or issues, contact the development team.
