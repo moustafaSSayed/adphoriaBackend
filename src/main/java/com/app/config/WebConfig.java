@@ -26,6 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "https://aadphoria.netlify.app")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 .allowedHeaders("*")
+                .exposedHeaders("Authorization", "Content-Type")
                 .allowCredentials(true)
                 .maxAge(3600);
     }
