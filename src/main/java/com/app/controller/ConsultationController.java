@@ -1,13 +1,12 @@
 package com.app.controller;
 
 import com.app.dto.ConsultationDto;
+import com.app.dto.PaginatedResponse;
 import com.app.service.ConsultationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/consultations")
@@ -36,8 +35,10 @@ public class ConsultationController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ConsultationDto>> getAllConsultations() {
-        List<ConsultationDto> consultations = consultationService.getAllConsultations();
+    public ResponseEntity<PaginatedResponse<ConsultationDto>> getAllConsultations(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size) {
+        PaginatedResponse<ConsultationDto> consultations = consultationService.getAllConsultations(page, size);
         return ResponseEntity.ok(consultations);
     }
 

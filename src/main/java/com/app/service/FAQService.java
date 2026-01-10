@@ -1,7 +1,7 @@
 package com.app.service;
 
 import com.app.dto.FAQDto;
-import java.util.List;
+import com.app.dto.PaginatedResponse;
 
 public interface FAQService {
 
@@ -11,7 +11,9 @@ public interface FAQService {
 
     void deleteFAQ(Long id);
 
-    List<FAQDto> getAllFAQs();
+    PaginatedResponse<FAQDto> getAllFAQs(int page, int size);
 
     FAQDto getFAQById(Long id);
+
+    FAQDto getFAQBySlug(String slug);
 }

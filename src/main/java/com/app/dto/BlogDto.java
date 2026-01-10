@@ -8,11 +8,9 @@ import lombok.*;
 @Builder
 public class BlogDto {
     private Long blogId;
+    private String slug;
     private String blogPhoto;
-    private String blogEnglishTitle;
-    private String blogEnglishBody;
-    private String englishShortDescription;
-    private String blogArabicTitle;
-    private String blogArabicBody;
-    private String arabicShortDescription;
+    private BilingualField title;
+    private BilingualField body;
+    private BilingualField shortDescription;
 }

@@ -1,11 +1,16 @@
 package com.app.service.impl;
 
+import com.app.dto.BilingualField;
 import com.app.dto.FAQDto;
+import com.app.dto.PaginatedResponse;
+import com.app.entity.BilingualText;
 import com.app.entity.FAQ;
 import com.app.exception.ResourceNotFoundException;
 import com.app.repository.FAQRepository;
 import com.app.service.FAQService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,14 +25,12 @@ public class FAQServiceImpl implements FAQService {
     @Override
     public FAQDto createFAQ(FAQDto faqDto) {
         FAQ faq = FAQ.builder()
-                .englishQuestion(faqDto.getEnglishQuestion())
-                .englishAnswer(faqDto.getEnglishAnswer())
-                .arabicQuestion(faqDto.getArabicQuestion())
-                .arabicAnswer(faqDto.getArabicAnswer())
+                .question(toBilingualText(faqDto.getQuestion()))
+                .answer(toBilingualText(faqDto.getAnswer()))
                 .build();
 
-        FAQ savedFAQ = faqRepository.save(faq);
-        return mapToDto(savedFAQ);
+        FAQ saved = faqRepository.save(faq);
+        return mapToDto(saved);
     }
 
     @Override
@@ -35,22 +38,15 @@ public class FAQServiceImpl implements FAQService {
         FAQ faq = faqRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("FAQ", "questionId", id));
 
-        // Only update fields that are not null (partial update support)
-        if (faqDto.getEnglishQuestion() != null) {
-            faq.setEnglishQuestion(faqDto.getEnglishQuestion());
+        if (faqDto.getQuestion() != null) {
+            faq.setQuestion(mergeBilingualText(faq.getQuestion(), faqDto.getQuestion()));
         }
-        if (faqDto.getEnglishAnswer() != null) {
-            faq.setEnglishAnswer(faqDto.getEnglishAnswer());
-        }
-        if (faqDto.getArabicQuestion() != null) {
-            faq.setArabicQuestion(faqDto.getArabicQuestion());
-        }
-        if (faqDto.getArabicAnswer() != null) {
-            faq.setArabicAnswer(faqDto.getArabicAnswer());
+        if (faqDto.getAnswer() != null) {
+            faq.setAnswer(mergeBilingualText(faq.getAnswer(), faqDto.getAnswer()));
         }
 
-        FAQ updatedFAQ = faqRepository.save(faq);
-        return mapToDto(updatedFAQ);
+        FAQ updated = faqRepository.save(faq);
+        return mapToDto(updated);
     }
 
     @Override
@@ -61,10 +57,24 @@ public class FAQServiceImpl implements FAQService {
     }
 
     @Override
-    public List<FAQDto> getAllFAQs() {
-        return faqRepository.findAll().stream()
+    public PaginatedResponse<FAQDto> getAllFAQs(int page, int size) {
+        Page<FAQ> faqPage = faqRepository.findAll(PageRequest.of(page - 1, size));
+
+        List<FAQDto> faqs = faqPage.getContent().stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
+
+        PaginatedResponse.PageMetadata metadata = PaginatedResponse.PageMetadata.builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(faqPage.getTotalPages())
+                .totalElements(faqPage.getTotalElements())
+                .build();
+
+        return PaginatedResponse.<FAQDto>builder()
+                .data(faqs)
+                .meta(metadata)
+                .build();
     }
 
     @Override
@@ -74,13 +84,49 @@ public class FAQServiceImpl implements FAQService {
         return mapToDto(faq);
     }
 
+    @Override
+    public FAQDto getFAQBySlug(String slug) {
+        FAQ faq = faqRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResourceNotFoundException("FAQ", "slug", slug));
+        return mapToDto(faq);
+    }
+
     private FAQDto mapToDto(FAQ faq) {
         return FAQDto.builder()
                 .questionId(faq.getQuestionId())
-                .englishQuestion(faq.getEnglishQuestion())
-                .englishAnswer(faq.getEnglishAnswer())
-                .arabicQuestion(faq.getArabicQuestion())
-                .arabicAnswer(faq.getArabicAnswer())
+                .slug(faq.getSlug())
+                .question(toBilingualField(faq.getQuestion()))
+                .answer(toBilingualField(faq.getAnswer()))
+                .build();
+    }
+
+    private BilingualText toBilingualText(BilingualField field) {
+        if (field == null)
+            return null;
+        return BilingualText.builder()
+                .en(field.getEn())
+                .ar(field.getAr())
+                .build();
+    }
+
+    private BilingualText mergeBilingualText(BilingualText existing, BilingualField updates) {
+        if (updates == null)
+            return existing;
+        if (existing == null)
+            return toBilingualText(updates);
+
+        return BilingualText.builder()
+                .en(updates.getEn() != null ? updates.getEn() : existing.getEn())
+                .ar(updates.getAr() != null ? updates.getAr() : existing.getAr())
+                .build();
+    }
+
+    private BilingualField toBilingualField(BilingualText text) {
+        if (text == null)
+            return null;
+        return BilingualField.builder()
+                .en(text.getEn())
+                .ar(text.getAr())
                 .build();
     }
 }

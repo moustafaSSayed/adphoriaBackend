@@ -1,7 +1,7 @@
 package com.app.service;
 
+import com.app.dto.PaginatedResponse;
 import com.app.dto.PreviousWorkDto;
-import java.util.List;
 
 public interface PreviousWorkService {
 
@@ -11,7 +11,9 @@ public interface PreviousWorkService {
 
     void deletePreviousWork(Long id);
 
-    List<PreviousWorkDto> getAllPreviousWorks();
+    PaginatedResponse<PreviousWorkDto> getAllPreviousWorks(int page, int size);
 
     PreviousWorkDto getPreviousWorkById(Long id);
+
+    PreviousWorkDto getPreviousWorkBySlug(String slug);
 }

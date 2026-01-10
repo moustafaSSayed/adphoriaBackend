@@ -1,13 +1,12 @@
 package com.app.controller;
 
 import com.app.dto.FAQDto;
+import com.app.dto.PaginatedResponse;
 import com.app.service.FAQService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/faqs")
@@ -35,14 +34,22 @@ public class FAQController {
     }
 
     @GetMapping
-    public ResponseEntity<List<FAQDto>> getAllFAQs() {
-        List<FAQDto> faqs = faqService.getAllFAQs();
+    public ResponseEntity<PaginatedResponse<FAQDto>> getAllFAQs(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size) {
+        PaginatedResponse<FAQDto> faqs = faqService.getAllFAQs(page, size);
         return ResponseEntity.ok(faqs);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<FAQDto> getFAQById(@PathVariable Long id) {
         FAQDto faq = faqService.getFAQById(id);
+        return ResponseEntity.ok(faq);
+    }
+
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<FAQDto> getFAQBySlug(@PathVariable String slug) {
+        FAQDto faq = faqService.getFAQBySlug(slug);
         return ResponseEntity.ok(faq);
     }
 }

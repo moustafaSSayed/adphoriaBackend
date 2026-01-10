@@ -1,11 +1,16 @@
 package com.app.service.impl;
 
+import com.app.dto.BilingualField;
+import com.app.dto.PaginatedResponse;
 import com.app.dto.PreviousWorkDto;
+import com.app.entity.BilingualText;
 import com.app.entity.PreviousWork;
 import com.app.exception.ResourceNotFoundException;
 import com.app.repository.PreviousWorkRepository;
 import com.app.service.PreviousWorkService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,17 +23,13 @@ public class PreviousWorkServiceImpl implements PreviousWorkService {
     private final PreviousWorkRepository previousWorkRepository;
 
     @Override
-    public PreviousWorkDto createPreviousWork(PreviousWorkDto dto) {
+    public PreviousWorkDto createPreviousWork(PreviousWorkDto previousWorkDto) {
         PreviousWork previousWork = PreviousWork.builder()
-                .englishPreviousWorkName(dto.getEnglishPreviousWorkName())
-                .englishSummary(dto.getEnglishSummary())
-                .englishCaseName(dto.getEnglishCaseName())
-                .englishCaseCategory(dto.getEnglishCaseCategory())
-                .arabicPreviousWorkName(dto.getArabicPreviousWorkName())
-                .arabicSummary(dto.getArabicSummary())
-                .arabicCaseName(dto.getArabicCaseName())
-                .arabicCaseCategory(dto.getArabicCaseCategory())
-                .caseFile(dto.getCaseFile())
+                .name(toBilingualText(previousWorkDto.getName()))
+                .summary(toBilingualText(previousWorkDto.getSummary()))
+                .caseName(toBilingualText(previousWorkDto.getCaseName()))
+                .caseCategory(toBilingualText(previousWorkDto.getCaseCategory()))
+                .caseFile(previousWorkDto.getCaseFile())
                 .build();
 
         PreviousWork saved = previousWorkRepository.save(previousWork);
@@ -36,37 +37,25 @@ public class PreviousWorkServiceImpl implements PreviousWorkService {
     }
 
     @Override
-    public PreviousWorkDto updatePreviousWork(Long id, PreviousWorkDto dto) {
+    public PreviousWorkDto updatePreviousWork(Long id, PreviousWorkDto previousWorkDto) {
         PreviousWork previousWork = previousWorkRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PreviousWork", "previousWorkId", id));
 
-        // Only update fields that are not null (partial update support)
-        if (dto.getEnglishPreviousWorkName() != null) {
-            previousWork.setEnglishPreviousWorkName(dto.getEnglishPreviousWorkName());
+        if (previousWorkDto.getName() != null) {
+            previousWork.setName(mergeBilingualText(previousWork.getName(), previousWorkDto.getName()));
         }
-        if (dto.getEnglishSummary() != null) {
-            previousWork.setEnglishSummary(dto.getEnglishSummary());
+        if (previousWorkDto.getSummary() != null) {
+            previousWork.setSummary(mergeBilingualText(previousWork.getSummary(), previousWorkDto.getSummary()));
         }
-        if (dto.getEnglishCaseName() != null) {
-            previousWork.setEnglishCaseName(dto.getEnglishCaseName());
+        if (previousWorkDto.getCaseName() != null) {
+            previousWork.setCaseName(mergeBilingualText(previousWork.getCaseName(), previousWorkDto.getCaseName()));
         }
-        if (dto.getEnglishCaseCategory() != null) {
-            previousWork.setEnglishCaseCategory(dto.getEnglishCaseCategory());
+        if (previousWorkDto.getCaseCategory() != null) {
+            previousWork.setCaseCategory(
+                    mergeBilingualText(previousWork.getCaseCategory(), previousWorkDto.getCaseCategory()));
         }
-        if (dto.getArabicPreviousWorkName() != null) {
-            previousWork.setArabicPreviousWorkName(dto.getArabicPreviousWorkName());
-        }
-        if (dto.getArabicSummary() != null) {
-            previousWork.setArabicSummary(dto.getArabicSummary());
-        }
-        if (dto.getArabicCaseName() != null) {
-            previousWork.setArabicCaseName(dto.getArabicCaseName());
-        }
-        if (dto.getArabicCaseCategory() != null) {
-            previousWork.setArabicCaseCategory(dto.getArabicCaseCategory());
-        }
-        if (dto.getCaseFile() != null) {
-            previousWork.setCaseFile(dto.getCaseFile());
+        if (previousWorkDto.getCaseFile() != null) {
+            previousWork.setCaseFile(previousWorkDto.getCaseFile());
         }
 
         PreviousWork updated = previousWorkRepository.save(previousWork);
@@ -81,10 +70,24 @@ public class PreviousWorkServiceImpl implements PreviousWorkService {
     }
 
     @Override
-    public List<PreviousWorkDto> getAllPreviousWorks() {
-        return previousWorkRepository.findAll().stream()
+    public PaginatedResponse<PreviousWorkDto> getAllPreviousWorks(int page, int size) {
+        Page<PreviousWork> previousWorkPage = previousWorkRepository.findAll(PageRequest.of(page - 1, size));
+
+        List<PreviousWorkDto> previousWorks = previousWorkPage.getContent().stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
+
+        PaginatedResponse.PageMetadata metadata = PaginatedResponse.PageMetadata.builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(previousWorkPage.getTotalPages())
+                .totalElements(previousWorkPage.getTotalElements())
+                .build();
+
+        return PaginatedResponse.<PreviousWorkDto>builder()
+                .data(previousWorks)
+                .meta(metadata)
+                .build();
     }
 
     @Override
@@ -94,18 +97,52 @@ public class PreviousWorkServiceImpl implements PreviousWorkService {
         return mapToDto(previousWork);
     }
 
+    @Override
+    public PreviousWorkDto getPreviousWorkBySlug(String slug) {
+        PreviousWork previousWork = previousWorkRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResourceNotFoundException("PreviousWork", "slug", slug));
+        return mapToDto(previousWork);
+    }
+
     private PreviousWorkDto mapToDto(PreviousWork previousWork) {
         return PreviousWorkDto.builder()
                 .previousWorkId(previousWork.getPreviousWorkId())
-                .englishPreviousWorkName(previousWork.getEnglishPreviousWorkName())
-                .englishSummary(previousWork.getEnglishSummary())
-                .englishCaseName(previousWork.getEnglishCaseName())
-                .englishCaseCategory(previousWork.getEnglishCaseCategory())
-                .arabicPreviousWorkName(previousWork.getArabicPreviousWorkName())
-                .arabicSummary(previousWork.getArabicSummary())
-                .arabicCaseName(previousWork.getArabicCaseName())
-                .arabicCaseCategory(previousWork.getArabicCaseCategory())
+                .slug(previousWork.getSlug())
+                .name(toBilingualField(previousWork.getName()))
+                .summary(toBilingualField(previousWork.getSummary()))
+                .caseName(toBilingualField(previousWork.getCaseName()))
+                .caseCategory(toBilingualField(previousWork.getCaseCategory()))
                 .caseFile(previousWork.getCaseFile())
+                .build();
+    }
+
+    private BilingualText toBilingualText(BilingualField field) {
+        if (field == null)
+            return null;
+        return BilingualText.builder()
+                .en(field.getEn())
+                .ar(field.getAr())
+                .build();
+    }
+
+    private BilingualText mergeBilingualText(BilingualText existing, BilingualField updates) {
+        if (updates == null)
+            return existing;
+        if (existing == null)
+            return toBilingualText(updates);
+
+        return BilingualText.builder()
+                .en(updates.getEn() != null ? updates.getEn() : existing.getEn())
+                .ar(updates.getAr() != null ? updates.getAr() : existing.getAr())
+                .build();
+    }
+
+    private BilingualField toBilingualField(BilingualText text) {
+        if (text == null)
+            return null;
+        return BilingualField.builder()
+                .en(text.getEn())
+                .ar(text.getAr())
                 .build();
     }
 }

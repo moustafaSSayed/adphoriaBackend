@@ -1,5 +1,7 @@
 package com.app.controller;
 
+import com.app.dto.BilingualField;
+import com.app.dto.PaginatedResponse;
 import com.app.dto.ResearchDto;
 import com.app.service.ResearchService;
 import com.app.service.FileStorageService;
@@ -9,8 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/researches")
@@ -23,12 +23,12 @@ public class ResearchController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResearchDto> createResearch(
             @RequestParam(value = "researchPhoto", required = false) MultipartFile researchPhoto,
-            @RequestParam("researchEnglishTitle") String researchEnglishTitle,
-            @RequestParam("researchEnglishBody") String researchEnglishBody,
-            @RequestParam(value = "englishShortDescription", required = false) String englishShortDescription,
-            @RequestParam("researchArabicTitle") String researchArabicTitle,
-            @RequestParam("researchArabicBody") String researchArabicBody,
-            @RequestParam(value = "arabicShortDescription", required = false) String arabicShortDescription) {
+            @RequestParam("titleEn") String titleEn,
+            @RequestParam("titleAr") String titleAr,
+            @RequestParam("bodyEn") String bodyEn,
+            @RequestParam("bodyAr") String bodyAr,
+            @RequestParam(value = "shortDescriptionEn", required = false) String shortDescriptionEn,
+            @RequestParam(value = "shortDescriptionAr", required = false) String shortDescriptionAr) {
 
         String photoUrl = null;
         if (researchPhoto != null && !researchPhoto.isEmpty()) {
@@ -37,12 +37,9 @@ public class ResearchController {
 
         ResearchDto researchDto = ResearchDto.builder()
                 .researchPhoto(photoUrl)
-                .researchEnglishTitle(researchEnglishTitle)
-                .researchEnglishBody(researchEnglishBody)
-                .englishShortDescription(englishShortDescription)
-                .researchArabicTitle(researchArabicTitle)
-                .researchArabicBody(researchArabicBody)
-                .arabicShortDescription(arabicShortDescription)
+                .title(BilingualField.builder().en(titleEn).ar(titleAr).build())
+                .body(BilingualField.builder().en(bodyEn).ar(bodyAr).build())
+                .shortDescription(BilingualField.builder().en(shortDescriptionEn).ar(shortDescriptionAr).build())
                 .build();
 
         ResearchDto created = researchService.createResearch(researchDto);
@@ -53,12 +50,12 @@ public class ResearchController {
     public ResponseEntity<ResearchDto> updateResearch(
             @PathVariable Long id,
             @RequestParam(value = "researchPhoto", required = false) MultipartFile researchPhoto,
-            @RequestParam(value = "researchEnglishTitle", required = false) String researchEnglishTitle,
-            @RequestParam(value = "researchEnglishBody", required = false) String researchEnglishBody,
-            @RequestParam(value = "englishShortDescription", required = false) String englishShortDescription,
-            @RequestParam(value = "researchArabicTitle", required = false) String researchArabicTitle,
-            @RequestParam(value = "researchArabicBody", required = false) String researchArabicBody,
-            @RequestParam(value = "arabicShortDescription", required = false) String arabicShortDescription) {
+            @RequestParam(value = "titleEn", required = false) String titleEn,
+            @RequestParam(value = "titleAr", required = false) String titleAr,
+            @RequestParam(value = "bodyEn", required = false) String bodyEn,
+            @RequestParam(value = "bodyAr", required = false) String bodyAr,
+            @RequestParam(value = "shortDescriptionEn", required = false) String shortDescriptionEn,
+            @RequestParam(value = "shortDescriptionAr", required = false) String shortDescriptionAr) {
 
         String photoUrl = null;
         if (researchPhoto != null && !researchPhoto.isEmpty()) {
@@ -67,12 +64,11 @@ public class ResearchController {
 
         ResearchDto researchDto = ResearchDto.builder()
                 .researchPhoto(photoUrl)
-                .researchEnglishTitle(researchEnglishTitle)
-                .researchEnglishBody(researchEnglishBody)
-                .englishShortDescription(englishShortDescription)
-                .researchArabicTitle(researchArabicTitle)
-                .researchArabicBody(researchArabicBody)
-                .arabicShortDescription(arabicShortDescription)
+                .title(titleEn != null ? BilingualField.builder().en(titleEn).ar(titleAr).build() : null)
+                .body(bodyEn != null ? BilingualField.builder().en(bodyEn).ar(bodyAr).build() : null)
+                .shortDescription(shortDescriptionEn != null
+                        ? BilingualField.builder().en(shortDescriptionEn).ar(shortDescriptionAr).build()
+                        : null)
                 .build();
 
         ResearchDto updated = researchService.updateResearch(id, researchDto);
@@ -93,14 +89,22 @@ public class ResearchController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ResearchDto>> getAllResearches() {
-        List<ResearchDto> researches = researchService.getAllResearches();
+    public ResponseEntity<PaginatedResponse<ResearchDto>> getAllResearches(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size) {
+        PaginatedResponse<ResearchDto> researches = researchService.getAllResearch(page, size);
         return ResponseEntity.ok(researches);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ResearchDto> getResearchById(@PathVariable Long id) {
         ResearchDto research = researchService.getResearchById(id);
+        return ResponseEntity.ok(research);
+    }
+
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<ResearchDto> getResearchBySlug(@PathVariable String slug) {
+        ResearchDto research = researchService.getResearchBySlug(slug);
         return ResponseEntity.ok(research);
     }
 }

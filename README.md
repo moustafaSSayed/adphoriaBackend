@@ -76,14 +76,59 @@ docker run -p 8080:8080 \
 
 ## 🌍 Bilingual Support
 
-All content entities (FAQ, Blog, Research, PreviousWork) support both **English** and **Arabic** languages. Each entity has separate fields for English and Arabic content:
+All content entities (FAQ, Blog, Research, PreviousWork) support both **English** and **Arabic** languages using a **nested object structure** for better organization:
 
-- **FAQ**: `englishQuestion`, `englishAnswer`, `arabicQuestion`, `arabicAnswer`
-- **Blog**: `blogEnglishTitle`, `blogEnglishBody`, `blogArabicTitle`, `blogArabicBody`, plus short descriptions
-- **Research**: `researchEnglishTitle`, `researchEnglishBody`, `researchArabicTitle`, `researchArabicBody`, plus short descriptions
-- **PreviousWork**: English and Arabic fields for name, summary, case name, and case category
+- **FAQ**: `question: {en, ar}`, `answer: {en, ar}`
+- **Blog**: `title: {en, ar}`, `body: {en, ar}`, `shortDescription: {en, ar}`
+- **Research**: `title: {en, ar}`, `body: {en, ar}`, `shortDescription: {en, ar}`
+- **PreviousWork**: `name: {en, ar}`, `summary: {en, ar}`, `caseName: {en, ar}`, `caseCategory: {en, ar}`
 
-When creating or updating these entities, you must provide both English and Arabic content.
+All bilingual entities also include auto-generated `slug` fields based on the English title for SEO-friendly URLs.
+
+### Response Example:
+```json
+{
+  "blogId": 1,
+  "slug": "understanding-legal-rights",
+  "blogTitle": {
+    "en": "Understanding Legal Rights",
+    "ar": "فهم الحقوق القانونية"
+  },
+  "blogBody": {
+    "en": "Full content...",
+    "ar": "المحتوى الكامل..."
+  }
+}
+```
+
+---
+
+## 📄 Pagination
+
+All `GET` endpoints for listing resources (except single item retrieval) now support **pagination** using query parameters:
+
+- `page` - Page number (1-indexed, default: 1)
+- `size` - Items per page (default: 15)
+
+### Paginated Response Format:
+```json
+{
+  "data": [
+    { /* entity data */ }
+  ],
+  "meta": {
+    "currentPage": 1,
+    "pageSize": 15,
+    "totalPages": 5,
+    "totalElements": 73
+  }
+}
+```
+
+**Example Request:**
+```http
+GET /api/blogs?page=2&size=10
+```
 
 ---
 
@@ -165,29 +210,53 @@ Authorization: Bearer <your_jwt_token>
 
 ## ❓ FAQ APIs
 
-### Get All FAQs 🌐
+### Get All FAQs (Paginated) 🌐
 
 ```http
-GET /api/faqs
+GET /api/faqs?page=1&size=15
 ```
 
 **Response:**
 ```json
-[
-  {
-    "questionId": 1,
-    "englishQuestion": "What services do you offer?",
-    "englishAnswer": "We provide comprehensive legal consultation services.",
-    "arabicQuestion": "ما هي الخدمات التي تقدمونها؟",
-    "arabicAnswer": "نقدم خدمات استشارات قانونية شاملة."
+{
+  "data": [
+    {
+      "questionId": 1,
+      "slug": "what-services-do-you-offer",
+      "question": {
+        "en": "What services do you offer?",
+        "ar": "ما هي الخدمات التي تقدمونها؟"
+      },
+      "answer": {
+        "en": "We provide comprehensive legal consultation services.",
+        "ar": "نقدم خدمات استشارات قانونية شاملة."
+      }
+    }
+  ],
+  "meta": {
+    "currentPage": 1,
+    "pageSize": 15,
+    "totalPages": 2,
+    "totalElements": 25
   }
-]
+}
 ```
 
 ### Get FAQ by ID 🌐
 
 ```http
 GET /api/faqs/{id}
+```
+
+### Get FAQ by Slug 🌐
+
+```http
+GET /api/faqs/slug/{slug}
+```
+
+**Example:**
+```
+GET /api/faqs/slug/what-services-do-you-offer
 ```
 
 ### Create FAQ 🔒
@@ -201,10 +270,14 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "englishQuestion": "What services do you offer?",
-  "englishAnswer": "We provide comprehensive legal consultation services.",
-  "arabicQuestion": "ما هي الخدمات التي تقدمونها؟",
-  "arabicAnswer": "نقدم خدمات استشارات قانونية شاملة."
+  "question": {
+    "en": "What services do you offer?",
+    "ar": "ما هي الخدمات التي تقدمونها؟"
+  },
+  "answer": {
+    "en": "We provide comprehensive legal consultation services.",
+    "ar": "نقدم خدمات استشارات قانونية شاملة."
+  }
 }
 ```
 
@@ -219,10 +292,14 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "englishQuestion": "Updated question?",
-  "englishAnswer": "Updated answer.",
-  "arabicQuestion": "سؤال محدث؟",
-  "arabicAnswer": "إجابة محدثة."
+  "question": {
+    "en": "Updated question?",
+    "ar": "سؤال محدث؟"
+  },
+  "answer": {
+    "en": "Updated answer.",
+    "ar": "إجابة محدثة."
+  }
 }
 ```
 
@@ -237,32 +314,58 @@ Authorization: Bearer <token>
 
 ## 📝 Blog APIs
 
-### Get All Blogs 🌐
+### Get All Blogs (Paginated) 🌐
 
 ```http
-GET /api/blogs
+GET /api/blogs?page=1&size=15
 ```
 
 **Response:**
 ```json
-[
-  {
-    "blogId": 1,
-    "blogPhoto": "https://res.cloudinary.com/.../photo.jpg",
-    "blogEnglishTitle": "Understanding Legal Rights",
-    "blogEnglishBody": "Full blog content in English...",
-    "englishShortDescription": "Brief summary in English",
-    "blogArabicTitle": "فهم الحقوق القانونية",
-    "blogArabicBody": "محتوى المدونة الكامل بالعربية...",
-    "arabicShortDescription": "ملخص موجز بالعربية"
+{
+  "data": [
+    {
+      "blogId": 1,
+      "slug": "understanding-legal-rights",
+      "blogPhoto": "https://res.cloudinary.com/.../photo.jpg",
+      "title": {
+        "en": "Understanding Legal Rights",
+        "ar": "فهم الحقوق القانونية"
+      },
+      "body": {
+        "en": "Full blog content in English...",
+        "ar": "محتوى المدونة الكامل بالعربية..."
+      },
+      "shortDescription": {
+        "en": "Brief summary in English",
+        "ar": "ملخص موجز بالعربية"
+      }
+    }
+  ],
+  "meta": {
+    "currentPage": 1,
+    "pageSize": 15,
+    "totalPages": 3,
+    "totalElements": 42
   }
-]
+}
 ```
 
 ### Get Blog by ID 🌐
 
 ```http
 GET /api/blogs/{id}
+```
+
+### Get Blog by Slug 🌐
+
+```http
+GET /api/blogs/slug/{slug}
+```
+
+**Example:**
+```
+GET /api/blogs/slug/understanding-legal-rights
 ```
 
 ### Create Blog (with Photo) 🔒
@@ -277,12 +380,12 @@ Content-Type: multipart/form-data
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| blogEnglishTitle | text | Yes | Blog title in English |
-| blogEnglishBody | text | Yes | Blog content in English |
-| englishShortDescription | text | No | Short summary in English |
-| blogArabicTitle | text | Yes | Blog title in Arabic |
-| blogArabicBody | text | Yes | Blog content in Arabic |
-| arabicShortDescription | text | No | Short summary in Arabic |
+| titleEn | text | Yes | Blog title in English |
+| titleAr | text | Yes | Blog title in Arabic |
+| bodyEn | text | Yes | Blog content in English |
+| bodyAr | text | Yes | Blog content in Arabic |
+| shortDescriptionEn | text | No | Short summary in English |
+| shortDescriptionAr | text | No | Short summary in Arabic |
 | blogPhoto | file | No | Image file (uploaded to Cloudinary) |
 
 ### Update Blog 🔒
@@ -306,12 +409,18 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "blogEnglishTitle": "Updated English Title",
-  "blogEnglishBody": "Updated English content...",
-  "englishShortDescription": "Updated English summary",
-  "blogArabicTitle": "العنوان المحدث بالعربية",
-  "blogArabicBody": "المحتوى المحدث بالعربية...",
-  "arabicShortDescription": "الملخص المحدث بالعربية"
+  "title": {
+    "en": "Updated English Title",
+    "ar": "العنوان المحدث بالعربية"
+  },
+  "body": {
+    "en": "Updated English content...",
+    "ar": "المحتوى المحدث بالعربية..."
+  },
+  "shortDescription": {
+    "en": "Updated English summary",
+    "ar": "الملخص المحدث بالعربية"
+  }
 }
 ```
 
@@ -510,28 +619,36 @@ Authorization: Bearer <token>
 
 ## 💬 Consultation APIs
 
-### Get All Consultations 🔒
+### Get All Consultations (Paginated) 🔒
 
 ```http
-GET /api/consultations
+GET /api/consultations?page=1&size=15
 Authorization: Bearer <token>
 ```
 
 **Response:**
 ```json
-[
-  {
-    "consultationId": 1,
-    "consultationStatus": "PENDING",
-    "firstName": "John",
-    "lastName": "Doe",
-    "causeCategory": "Legal",
-    "causeName": "Contract Review",
-    "mobileNumber": "+1234567890",
-    "email": "john@example.com",
-    "consultationBody": "I need help reviewing my employment contract..."
+{
+  "data": [
+    {
+      "consultationId": 1,
+      "consultationStatus": "PENDING",
+      "firstName": "John",
+      "lastName": "Doe",
+      "causeCategory": "Legal",
+      "causeName": "Contract Review",
+      "mobileNumber": "+1234567890",
+      "email": "john@example.com",
+      "consultationBody": "I need help reviewing my employment contract..."
+    }
+  ],
+  "meta": {
+    "currentPage": 1,
+    "pageSize": 15,
+    "totalPages": 1,
+    "totalElements": 8
   }
-]
+}
 ```
 
 ### Get Consultation by ID 🔒

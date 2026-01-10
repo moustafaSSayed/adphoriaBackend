@@ -1,7 +1,7 @@
 package com.app.service;
 
+import com.app.dto.PaginatedResponse;
 import com.app.dto.ResearchDto;
-import java.util.List;
 
 public interface ResearchService {
 
@@ -11,7 +11,9 @@ public interface ResearchService {
 
     void deleteResearch(Long id);
 
-    List<ResearchDto> getAllResearches();
+    PaginatedResponse<ResearchDto> getAllResearch(int page, int size);
 
     ResearchDto getResearchById(Long id);
+
+    ResearchDto getResearchBySlug(String slug);
 }

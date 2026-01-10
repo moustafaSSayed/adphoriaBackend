@@ -1,7 +1,7 @@
 package com.app.service;
 
 import com.app.dto.ConsultationDto;
-import java.util.List;
+import com.app.dto.PaginatedResponse;
 
 public interface ConsultationService {
 
@@ -11,7 +11,7 @@ public interface ConsultationService {
 
     void deleteConsultation(Long id);
 
-    List<ConsultationDto> getAllConsultations();
+    PaginatedResponse<ConsultationDto> getAllConsultations(int page, int size);
 
     ConsultationDto getConsultationById(Long id);
 }

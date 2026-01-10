@@ -6,8 +6,11 @@ import com.app.exception.ResourceNotFoundException;
 import com.app.repository.ConsultationRepository;
 import com.app.service.ConsultationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import com.app.dto.PaginatedResponse;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -77,10 +80,24 @@ public class ConsultationServiceImpl implements ConsultationService {
     }
 
     @Override
-    public List<ConsultationDto> getAllConsultations() {
-        return consultationRepository.findAll().stream()
+    public PaginatedResponse<ConsultationDto> getAllConsultations(int page, int size) {
+        Page<Consultation> consultationPage = consultationRepository.findAll(PageRequest.of(page - 1, size));
+
+        List<ConsultationDto> consultations = consultationPage.getContent().stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
+
+        PaginatedResponse.PageMetadata metadata = PaginatedResponse.PageMetadata.builder()
+                .currentPage(page)
+                .pageSize(size)
+                .totalPages(consultationPage.getTotalPages())
+                .totalElements(consultationPage.getTotalElements())
+                .build();
+
+        return PaginatedResponse.<ConsultationDto>builder()
+                .data(consultations)
+                .meta(metadata)
+                .build();
     }
 
     @Override

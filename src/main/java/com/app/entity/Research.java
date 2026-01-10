@@ -1,5 +1,6 @@
 package com.app.entity;
 
+import com.app.util.SlugUtils;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,24 +17,38 @@ public class Research {
     @Column(name = "research_id")
     private Long researchId;
 
+    @Column(unique = true)
+    private String slug;
+
     @Column(name = "research_photo")
     private String researchPhoto;
 
-    @Column(name = "research_english_title", nullable = false)
-    private String researchEnglishTitle;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "en", column = @Column(name = "research_english_title", nullable = false)),
+            @AttributeOverride(name = "ar", column = @Column(name = "research_arabic_title", nullable = false))
+    })
+    private BilingualText title;
 
-    @Column(name = "research_english_body", columnDefinition = "TEXT")
-    private String researchEnglishBody;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "en", column = @Column(name = "research_english_body", columnDefinition = "TEXT")),
+            @AttributeOverride(name = "ar", column = @Column(name = "research_arabic_body", columnDefinition = "TEXT"))
+    })
+    private BilingualText body;
 
-    @Column(name = "english_short_description")
-    private String englishShortDescription;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "en", column = @Column(name = "english_short_description")),
+            @AttributeOverride(name = "ar", column = @Column(name = "arabic_short_description"))
+    })
+    private BilingualText shortDescription;
 
-    @Column(name = "research_arabic_title", nullable = false)
-    private String researchArabicTitle;
-
-    @Column(name = "research_arabic_body", columnDefinition = "TEXT")
-    private String researchArabicBody;
-
-    @Column(name = "arabic_short_description")
-    private String arabicShortDescription;
+    @PrePersist
+    @PreUpdate
+    private void generateSlug() {
+        if (title != null && title.getEn() != null && !title.getEn().isEmpty()) {
+            this.slug = SlugUtils.generateSlug(title.getEn());
+        }
+    }
 }

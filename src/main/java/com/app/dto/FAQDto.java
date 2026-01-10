@@ -8,8 +8,7 @@ import lombok.*;
 @Builder
 public class FAQDto {
     private Long questionId;
-    private String englishQuestion;
-    private String englishAnswer;
-    private String arabicQuestion;
-    private String arabicAnswer;
+    private String slug;
+    private BilingualField question;
+    private BilingualField answer;
 }

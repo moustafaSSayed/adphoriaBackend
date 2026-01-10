@@ -1,7 +1,7 @@
 package com.app.service;
 
 import com.app.dto.BlogDto;
-import java.util.List;
+import com.app.dto.PaginatedResponse;
 
 public interface BlogService {
 
@@ -11,7 +11,9 @@ public interface BlogService {
 
     void deleteBlog(Long id);
 
-    List<BlogDto> getAllBlogs();
+    PaginatedResponse<BlogDto> getAllBlogs(int page, int size);
 
     BlogDto getBlogById(Long id);
+
+    BlogDto getBlogBySlug(String slug);
 }

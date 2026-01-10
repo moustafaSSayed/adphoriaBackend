@@ -8,11 +8,9 @@ import lombok.*;
 @Builder
 public class ResearchDto {
     private Long researchId;
+    private String slug;
     private String researchPhoto;
-    private String researchEnglishTitle;
-    private String researchEnglishBody;
-    private String englishShortDescription;
-    private String researchArabicTitle;
-    private String researchArabicBody;
-    private String arabicShortDescription;
+    private BilingualField title;
+    private BilingualField body;
+    private BilingualField shortDescription;
 }

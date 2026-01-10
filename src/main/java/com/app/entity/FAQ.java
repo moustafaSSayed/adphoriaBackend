@@ -1,5 +1,6 @@
 package com.app.entity;
 
+import com.app.util.SlugUtils;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,15 +17,28 @@ public class FAQ {
     @Column(name = "question_id")
     private Long questionId;
 
-    @Column(name = "english_question", nullable = false, columnDefinition = "TEXT")
-    private String englishQuestion;
+    @Column(unique = true)
+    private String slug;
 
-    @Column(name = "english_answer", nullable = false, columnDefinition = "TEXT")
-    private String englishAnswer;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "en", column = @Column(name = "english_question", nullable = false, columnDefinition = "TEXT")),
+            @AttributeOverride(name = "ar", column = @Column(name = "arabic_question", nullable = false, columnDefinition = "TEXT"))
+    })
+    private BilingualText question;
 
-    @Column(name = "arabic_question", nullable = false, columnDefinition = "TEXT")
-    private String arabicQuestion;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "en", column = @Column(name = "english_answer", nullable = false, columnDefinition = "TEXT")),
+            @AttributeOverride(name = "ar", column = @Column(name = "arabic_answer", nullable = false, columnDefinition = "TEXT"))
+    })
+    private BilingualText answer;
 
-    @Column(name = "arabic_answer", nullable = false, columnDefinition = "TEXT")
-    private String arabicAnswer;
+    @PrePersist
+    @PreUpdate
+    private void generateSlug() {
+        if (question != null && question.getEn() != null && !question.getEn().isEmpty()) {
+            this.slug = SlugUtils.generateSlug(question.getEn());
+        }
+    }
 }
