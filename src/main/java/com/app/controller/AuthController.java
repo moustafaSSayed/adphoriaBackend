@@ -2,6 +2,7 @@ package com.app.controller;
 
 import com.app.dto.AuthRequest;
 import com.app.dto.AuthResponse;
+import com.app.dto.RefreshTokenRequest;
 import com.app.dto.RegisterRequest;
 import com.app.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
         AuthResponse response = userService.login(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@RequestBody RefreshTokenRequest request) {
+        AuthResponse response = userService.refreshToken(request.getRefreshToken());
         return ResponseEntity.ok(response);
     }
 }

@@ -1,5 +1,9 @@
 package com.app.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +18,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -37,8 +44,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwt = authorizationHeader.substring(7);
             try {
                 username = jwtUtil.extractUsername(jwt);
+            } catch (ExpiredJwtException e) {
+                // Token has expired
+                sendUnauthorizedError(response, "Token has expired");
+                return;
+            } catch (MalformedJwtException e) {
+                // Invalid token format
+                sendUnauthorizedError(response, "Invalid token format");
+                return;
+            } catch (SignatureException e) {
+                // Invalid token signature
+                sendUnauthorizedError(response, "Invalid token signature");
+                return;
             } catch (Exception e) {
-                // Invalid JWT token - continue without authentication
+                // Other JWT errors
+                sendUnauthorizedError(response, "Invalid token: " + e.getMessage());
+                return;
             }
         }
 
@@ -56,5 +77,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void sendUnauthorizedError(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("timestamp", LocalDateTime.now().toString());
+        errorDetails.put("status", 401);
+        errorDetails.put("error", "Unauthorized");
+        errorDetails.put("message", message);
+
+        ObjectMapper mapper = new ObjectMapper();
+        response.getWriter().write(mapper.writeValueAsString(errorDetails));
     }
 }

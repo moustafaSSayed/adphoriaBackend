@@ -43,6 +43,24 @@ The application supports multiple profiles:
 
 Configure your database and Cloudinary credentials in `src/main/resources/application-{profile}.properties`
 
+**Required Environment Variables:**
+
+| Variable | Description | Example/Default |
+|----------|-------------|----------------|
+| `JWT_SECRET` | Secret key for JWT signing | Base64 encoded string |
+| `JWT_EXPIRATION` | Access token lifetime (ms) | `1800000` (30 minutes) |
+| `JWT_REFRESH_EXPIRATION` | Refresh token lifetime (ms) | `604800000` (7 days) |
+| `DB_URL` | Database connection URL | `jdbc:mysql://localhost:3306/adphoria` |
+| `DB_USERNAME` | Database username | `root` |
+| `DB_PASSWORD` | Database password | - |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | - |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | - |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | - |
+
+**Recommended Token Expiration Values:**
+- **Development**: Access: 30 min, Refresh: 7 days
+- **Production**: Access: 15-30 min, Refresh: 7-30 days
+
 ### Running Locally
 
 ```bash
@@ -134,6 +152,11 @@ GET /api/blogs?page=2&size=10
 
 ## 🔐 Authentication
 
+The API uses JWT (JSON Web Tokens) for authentication with both **access tokens** and **refresh tokens**:
+
+- **Access Token**: Short-lived token (30 minutes) used to authenticate API requests
+- **Refresh Token**: Long-lived token (7 days) used to obtain new access tokens without re-login
+
 ### Register a New Admin
 
 ```http
@@ -153,9 +176,18 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 1800,
+  "username": "admin",
+  "message": "User registered successfully"
 }
 ```
+
+**Response Fields:**
+- `accessToken`: Use this token for API authentication
+- `refreshToken`: Store securely to get new access tokens
+- `expiresIn`: Access token expiration time in seconds (1800 = 30 minutes)
 
 ### Login
 
@@ -175,16 +207,95 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 1800,
+  "username": "admin",
+  "message": "Login successful"
 }
 ```
 
-### Using the JWT Token
+### Refresh Access Token
 
-For protected endpoints, include the token in the Authorization header:
+When your access token expires, use the refresh token to get a new one **without requiring the user to log in again**.
+
+```http
+POST /auth/refresh
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response:**
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 1800,
+  "username": "admin",
+  "message": "Token refreshed successfully"
+}
+```
+
+> [!NOTE]
+> The API implements **refresh token rotation** for enhanced security. Each time you refresh, you receive a new refresh token. The old refresh token becomes invalid.
+
+### Using the Access Token
+
+For protected endpoints, include the access token in the Authorization header:
 
 ```
-Authorization: Bearer <your_jwt_token>
+Authorization: Bearer <your_access_token>
+```
+
+### Token Expiration Behavior
+
+**When Access Token Expires:**
+- API returns **401 Unauthorized** with error message
+- Use refresh token to get a new access token
+
+**When Refresh Token Expires:**
+- User must log in again
+- Returns **400 Bad Request** error
+
+### Error Responses
+
+#### Expired Access Token (401 Unauthorized)
+
+```json
+{
+  "timestamp": "2026-01-13T02:28:31",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Token has expired"
+}
+```
+
+#### Invalid Access Token (401 Unauthorized)
+
+```json
+{
+  "timestamp": "2026-01-13T02:28:31",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Invalid token signature"
+}
+```
+
+#### Invalid Refresh Token (400 Bad Request)
+
+```json
+{
+  "timestamp": "2026-01-13T02:28:31",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Invalid or expired refresh token"
+}
 ```
 
 ---
