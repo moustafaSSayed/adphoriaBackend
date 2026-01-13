@@ -10,6 +10,7 @@ com\app\controller\AuthController.class
 com\app\dto\ConsultationDto$ConsultationDtoBuilder.class
 com\app\repository\ConsultationRepository.class
 com\app\dto\ResearchDto$ResearchDtoBuilder.class
+com\app\dto\RefreshTokenRequest.class
 com\app\repository\BlogRepository.class
 com\app\dto\PreviousWorkDto.class
 com\app\util\SlugUtils.class
@@ -35,6 +36,7 @@ com\app\dto\AuthRequest$AuthRequestBuilder.class
 com\app\exception\ResourceNotFoundException.class
 com\app\entity\FAQ.class
 com\app\config\WebConfig.class
+com\app\dto\RefreshTokenRequest$RefreshTokenRequestBuilder.class
 com\app\entity\BilingualText.class
 com\app\entity\Blog$BlogBuilder.class
 com\app\entity\Consultation.class
